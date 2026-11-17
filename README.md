@@ -107,6 +107,80 @@ Además, **FiberFit** incorpora un **Módulo de Nutrición** con calculadora de 
 
 ---
 
+## ⚙️ Instalación y Puesta en Marcha
+
+Sigue estos pasos para clonar y ejecutar el proyecto en tu entorno local:
+
+### 1. Requisitos Previos
+
+Asegúrate de contar con las siguientes herramientas instaladas en tu sistema:
+- [Node.js](https://nodejs.org/) (versión 18 o superior recomendada)
+- Un gestor de paquetes: **pnpm** (recomendado), **npm** o **yarn**
+
+### 2. Clonar el Repositorio
+
+```bash
+git clone https://github.com/tu-usuario/FiberFit.git
+cd FiberFit
+```
+
+### 3. Instalar Dependencias
+
+Instala los paquetes necesarios utilizando tu gestor de preferencia:
+
+```bash
+# Con pnpm (recomendado)
+pnpm install
+
+# O con npm
+npm install
+```
+
+### 4. Configurar Variables de Entorno
+
+Crea un archivo `.env` en la raíz del proyecto tomando como plantilla `.env.example`:
+
+```bash
+# En sistemas basados en Unix / Git Bash
+cp .env.example .env
+
+# O en Windows PowerShell
+Copy-Item .env.example .env
+```
+
+Abre el archivo `.env` y completa las credenciales de tu proyecto de [Supabase](https://supabase.com/):
+
+```env
+VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=tu_supabase_anon_key
+```
+
+### 5. Iniciar el Servidor de Desarrollo
+
+Inicia la aplicación en modo desarrollo con Vite:
+
+```bash
+# Con pnpm
+pnpm dev
+
+# O con npm
+npm run dev
+```
+
+La aplicación quedará disponible en `http://localhost:5173/` (o el puerto indicado en la consola).
+
+### 6. Compilar para Producción
+
+Para generar el bundle optimizado listo para desplegar:
+
+```bash
+pnpm build
+# o
+npm run build
+```
+
+---
+
 ## 🔗 Contacto & Soporte
 
 Diseñado, desarrollado y mantenido con excelencia por **[WaveFrame Studio](https://waveframe.com.ar/)**.
