@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FiberFit — Carteles QR para Máquinas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-page: #0a0a0a;
+      --bg-card: #111113;
+      --bg-card-inner: #18181b;
+      --green: #22c55e;
+      --green-dim: rgba(34, 197, 94, 0.14);
+      --green-border: rgba(34, 197, 94, 0.38);
+      --text-main: #ffffff;
+      --text-muted: #a1a1aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 32px 24px 64px;
+    }
+
+    /* Barra de herramientas (se oculta al imprimir) */
+    .toolbar {
+      max-width: 1120px;
+      margin: 0 auto 32px;
+      padding: 18px 22px;
+      background: #141416;
+      border: 1px solid #27272a;
+      border-radius: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .toolbar-info h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-info p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid #27272a;
+      background: #1f1f23;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: #27272a;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: #052e16;
+      border-color: var(--green);
+    }
+
+    .btn-primary:hover {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #fff;
+    }
+
+    /* Grilla de carteles */
+    .grid {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 28px;
+    }
+
+    /* Cartelito individual (10 cm x 15 cm aprox.) */
+    .sign {
+      width: 10cm;
+      height: 15cm;
+      background: linear-gradient(165deg, #141417 0%, #0a0a0c 100%);
+      border: 2px solid #27272a;
+      border-radius: 20px;
+      padding: 24px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55);
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* Acento superior verde */
+    .sign::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #16a34a, #22c55e, #4ade80);
+    }
+
+    /* Brillo sutil de fondo */
+    .sign::after {
+      content: '';
+      position: absolute;
+      top: -70px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 240px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(34, 197, 94, 0.16) 0%, rgba(34, 197, 94, 0) 70%);
+      pointer-events: none;
+    }
+
+    /* Header de marca */
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      z-index: 1;
+    }
+
+    .brand-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: var(--green-dim);
+      border: 1px solid var(--green-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .brand-name {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: #ffffff;
+    }
+
+    .brand-name span {
+      color: var(--green);
+    }
+
+    /* Bloque de título */
+    .exercise-header {
+      text-align: center;
+      z-index: 1;
+      width: 100%;
+    }
+
+    .muscle-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--green);
+      background: var(--green-dim);
+      border: 1px solid var(--green-border);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+
+    .exercise-title {
+      font-size: 25px;
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    /* Caja para el QR */
+    .qr-wrapper {
+      z-index: 1;
+      width: 215px;
+      height: 215px;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 14px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.22);
+      cursor: pointer;
+    }
+
+    .qr-inner {
+      width: 100%;
+      height: 100%;
+      border: 2px dashed #d4d4d8;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 12px;
+      color: #71717a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .qr-inner.has-image {
+      border: none;
+      padding: 0;
+    }
+
+    .qr-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    .qr-inner.has-image img {
+      display: block;
+    }
+
+    .qr-inner.has-image .qr-placeholder-text {
+      display: none;
+    }
+
+    .qr-placeholder-text {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1.4;
+      color: #a1a1aa;
+    }
+
+    body.hide-guides .qr-inner {
+      border-color: transparent;
+    }
+
+    body.hide-guides .qr-placeholder-text {
+      opacity: 0;
+    }
+
+    /* Esquinas decorativas estilo escáner */
+    .corner {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-color: var(--green);
+      border-style: solid;
+      pointer-events: none;
+    }
+    .corner.tl { top: -5px; left: -5px; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 8px; }
+    .corner.tr { top: -5px; right: -5px; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 8px; }
+    .corner.bl { bottom: -5px; left: -5px; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 8px; }
+    .corner.br { bottom: -5px; right: -5px; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 8px; }
+
+    /* Footer CTA */
+    .cta {
+      z-index: 1;
+      width: 100%;
+      background: var(--bg-card-inner);
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .cta-text {
+      text-align: left;
+    }
+
+    .cta-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .cta-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .tagline {
+      z-index: 1;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #52525b;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0.5cm;
+      }
+
+      .toolbar {
+        display: none !important;
+      }
+
+      .grid {
+        gap: 0.6cm;
+        justify-content: flex-start;
+      }
+
+      .sign {
+        box-shadow: none;
+        border-color: #18181b;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <div class="toolbar-info">
+      <h1>Carteles QR — FiberFit</h1>
+      <p>Tamaño estándar 10 × 15 cm. Hacé clic en el recuadro blanco si querés cargar tu QR digitalmente, o imprimilos en blanco para pegarlo después.</p>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn" id="toggleGuidesBtn" type="button">Ocultar texto guía</button>
+      <button class="btn btn-primary" onclick="window.print()" type="button">Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+
+  <main class="grid">
+
+    <!-- 1. BANCO PLANO CON BARRA -->
+    <article class="sign">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>
+        </div>
+        <div class="brand-name">Fiber<span>Fit</span></div>
+      </div>
+
+      <div class="exercise-header">
+        <div class="muscle-badge">Pecho</div>
+        <h2 class="exercise-title">Banco Plano<br />con Barra</h2>
+      </div>
+
+      <label class="qr-wrapper" title="Hacé clic para insertar tu imagen QR (opcional)">
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+        <div class="qr-inner">
+          <img alt="QR Banco plano con barra" />
+          <span class="qr-placeholder-text">Colocar QR aquí<br />(clic para subir)</span>
+        </div>
+        <input type="file" accept="image/*" />
+      </label>
+
+      <div class="cta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        <div class="cta-text">
+          <div class="cta-title">Escaneá el QR</div>
+          <div class="cta-sub">Mirá la técnica y ejecución en la app</div>
+        </div>
+      </div>
+
+      <div class="tagline">Entrená con Inteligencia</div>
+    </article>
+
+    <!-- 2. SENTADILLA LIBRE -->
+    <article class="sign">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>
+        </div>
+        <div class="brand-name">Fiber<span>Fit</span></div>
+      </div>
+
+      <div class="exercise-header">
+        <div class="muscle-badge">Cuádriceps · Piernas</div>
+        <h2 class="exercise-title">Sentadilla<br />Libre</h2>
+      </div>
+
+      <label class="qr-wrapper" title="Hacé clic para insertar tu imagen QR (opcional)">
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+        <div class="qr-inner">
+          <img alt="QR Sentadilla libre" />
+          <span class="qr-placeholder-text">Colocar QR aquí<br />(clic para subir)</span>
+        </div>
+        <input type="file" accept="image/*" />
+      </label>
+
+      <div class="cta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        <div class="cta-text">
+          <div class="cta-title">Escaneá el QR</div>
+          <div class="cta-sub">Mirá la técnica y ejecución en la app</div>
+        </div>
+      </div>
+
+      <div class="tagline">Entrená con Inteligencia</div>
+    </article>
+
+    <!-- 3. TRASNUCA EN POLEA -->
+    <article class="sign">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>
+        </div>
+        <div class="brand-name">Fiber<span>Fit</span></div>
+      </div>
+
+      <div class="exercise-header">
+        <div class="muscle-badge">Espalda</div>
+        <h2 class="exercise-title">Trasnuca<br />en Polea</h2>
+      </div>
+
+      <label class="qr-wrapper" title="Hacé clic para insertar tu imagen QR (opcional)">
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+        <div class="qr-inner">
+          <img alt="QR Trasnuca en polea" />
+          <span class="qr-placeholder-text">Colocar QR aquí<br />(clic para subir)</span>
+        </div>
+        <input type="file" accept="image/*" />
+      </label>
+
+      <div class="cta">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        <div class="cta-text">
+          <div class="cta-title">Escaneá el QR</div>
+          <div class="cta-sub">Mirá la técnica y ejecución en la app</div>
+        </div>
+      </div>
+
+      <div class="tagline">Entrená con Inteligencia</div>
+    </article>
+
+  </main>
+
+  <script>
+    // Permite cargar opcionalmente una imagen QR haciendo clic en cada recuadro
+    document.querySelectorAll('.qr-wrapper').forEach((wrapper) => {
+      const input = wrapper.querySelector('input[type="file"]');
+      const inner = wrapper.querySelector('.qr-inner');
+      const img = wrapper.querySelector('img');
+
+      input.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          img.src = ev.target.result;
+          inner.classList.add('has-image');
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // Botón para ocultar/mostrar las líneas y texto guía antes de imprimir en blanco
+    const toggleBtn = document.getElementById('toggleGuidesBtn');
+    toggleBtn.addEventListener('click', () => {
+      const hidden = document.body.classList.toggle('hide-guides');
+      toggleBtn.textContent = hidden ? 'Mostrar texto guía' : 'Ocultar texto guía';
+    });
+  </script>
+</body>
+</html>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { MUSCLE_GROUPS_DATA, MuscleGroupData, ExerciseDetail } from '../data/trainerData';
 import { BodyDiagram } from './BodyDiagram';
-import { ChevronDown, ChevronUp, ArrowLeft, Play, Sparkles, HelpCircle, ChevronRight, Dumbbell, Layers, Flame, User, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowLeft, Play, Sparkles, HelpCircle, ChevronRight, Dumbbell, Layers, Flame, User, Clock, Link2, Check } from 'lucide-react';
 
 const MUSCLE_KEYS = [
     { key: 'abdominales', name: 'Abdominales' },
@@ -56,10 +56,57 @@ const getCategoryIcon = (catName: string, catId: string) => {
     return <Dumbbell size={16} />;
 };
 
+const findExerciseById = (exerciseId: string): { muscleKey: string; categoryId: string; exercise: ExerciseDetail } | null => {
+    for (const [muscleKey, muscleData] of Object.entries(MUSCLE_GROUPS_DATA)) {
+        for (const cat of muscleData.equipmentCategories) {
+            const found = cat.exercises.find((ex) => ex.id === exerciseId);
+            if (found) {
+                return { muscleKey, categoryId: cat.id, exercise: found };
+            }
+        }
+    }
+    return null;
+};
+
+const parseTrainerPath = (pathname: string): { muscleKey: string | null; categoryId: string | null; exercise: ExerciseDetail | null } => {
+    const segments = pathname.split('/').filter(Boolean).map((s) => decodeURIComponent(s).toLowerCase());
+
+    // Soporta /ejercicio/:exerciseId
+    if (segments[0] === 'ejercicio' && segments[1]) {
+        const match = findExerciseById(segments[1]);
+        if (match) return match;
+    }
+
+    // Soporta /trainer/:muscleKey y /trainer/:muscleKey/:exerciseId
+    if (segments[0] === 'trainer' && segments[1]) {
+        const muscleKey = segments[1];
+        const muscleData = MUSCLE_GROUPS_DATA[muscleKey];
+        if (muscleData) {
+            if (segments[2]) {
+                for (const cat of muscleData.equipmentCategories) {
+                    const found = cat.exercises.find((ex) => ex.id.toLowerCase() === segments[2]);
+                    if (found) {
+                        return { muscleKey, categoryId: cat.id, exercise: found };
+                    }
+                }
+            }
+            return {
+                muscleKey,
+                categoryId: muscleData.equipmentCategories[0]?.id || null,
+                exercise: null,
+            };
+        }
+    }
+
+    return { muscleKey: null, categoryId: 'mancuernas', exercise: null };
+};
+
 export const TrainerView: React.FC = () => {
-    const [selectedMuscleKey, setSelectedMuscleKey] = useState<string | null>(null);
-    const [openCategory, setOpenCategory] = useState<string | null>('mancuernas');
-    const [selectedExercise, setSelectedExercise] = useState<ExerciseDetail | null>(null);
+    const initialRoute = parseTrainerPath(window.location.pathname);
+    const [selectedMuscleKey, setSelectedMuscleKey] = useState<string | null>(initialRoute.muscleKey);
+    const [openCategory, setOpenCategory] = useState<string | null>(initialRoute.categoryId);
+    const [selectedExercise, setSelectedExercise] = useState<ExerciseDetail | null>(initialRoute.exercise);
+    const [copiedLink, setCopiedLink] = useState(false);
 
     // Recently viewed state synced with localStorage
     const [lastMuscleKey, setLastMuscleKey] = useState<string | null>(() => localStorage.getItem('trainer_last_muscle'));
@@ -71,6 +118,17 @@ export const TrainerView: React.FC = () => {
     const cardsGridRef = useRef<HTMLDivElement>(null);
 
     const selectedMuscle: MuscleGroupData | null = selectedMuscleKey ? MUSCLE_GROUPS_DATA[selectedMuscleKey] || null : null;
+
+    useEffect(() => {
+        const onPopState = () => {
+            const parsed = parseTrainerPath(window.location.pathname);
+            setSelectedMuscleKey(parsed.muscleKey);
+            setOpenCategory(parsed.categoryId);
+            setSelectedExercise(parsed.exercise);
+        };
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, []);
 
     useEffect(() => {
         if (containerRef.current) {
@@ -87,6 +145,7 @@ export const TrainerView: React.FC = () => {
         setSelectedExercise(null);
         setLastMuscleKey(key);
         localStorage.setItem('trainer_last_muscle', key);
+        window.history.pushState({}, '', `/trainer/${key}`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         const muscleData = MUSCLE_GROUPS_DATA[key];
         if (muscleData && muscleData.equipmentCategories.length > 0) {
@@ -101,11 +160,17 @@ export const TrainerView: React.FC = () => {
         setSelectedExercise(exercise);
         setLastExerciseId(exercise.id);
         localStorage.setItem('trainer_last_exercise', exercise.id);
+        if (selectedMuscleKey) {
+            window.history.pushState({}, '', `/trainer/${selectedMuscleKey}/${exercise.id}`);
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleBackToMuscleView = () => {
         setSelectedExercise(null);
+        if (selectedMuscleKey) {
+            window.history.pushState({}, '', `/trainer/${selectedMuscleKey}`);
+        }
         const restoreY = savedScrollYRef.current;
         setTimeout(() => {
             window.scrollTo({ top: restoreY, behavior: 'smooth' });
@@ -115,7 +180,20 @@ export const TrainerView: React.FC = () => {
     const handleBackToMusclesList = () => {
         setSelectedMuscleKey(null);
         setSelectedExercise(null);
+        window.history.pushState({}, '', '/trainer');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleCopyExerciseLink = async () => {
+        if (!selectedMuscleKey || !selectedExercise) return;
+        const url = `${window.location.origin}/trainer/${selectedMuscleKey}/${selectedExercise.id}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            setCopiedLink(true);
+            setTimeout(() => setCopiedLink(false), 2000);
+        } catch {
+            window.prompt('Copiá este link:', url);
+        }
     };
 
     return (
@@ -123,13 +201,33 @@ export const TrainerView: React.FC = () => {
             {/* STAGE 3: EXERCISE DETAIL VIEW */}
             {selectedExercise && selectedMuscle ? (
                 <div className="bg-gray-900/90 sm:bg-gray-900/80 backdrop-blur-md -mx-5 sm:mx-0 rounded-none sm:rounded-2xl p-3 sm:p-6 md:p-8 border-x-0 sm:border border-gray-800 shadow-2xl">
-                    <button
-                        onClick={handleBackToMuscleView}
-                        className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gray-950/80 hover:bg-gray-800 text-green-400 hover:text-green-300 border border-gray-800 hover:border-green-500/50 text-xs md:text-sm font-bold transition-all duration-200 shadow-md group mb-5"
-                    >
-                        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform text-green-400" />
-                        <span>Volver a {selectedMuscle.name}</span>
-                    </button>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                        <button
+                            onClick={handleBackToMuscleView}
+                            className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gray-950/80 hover:bg-gray-800 text-green-400 hover:text-green-300 border border-gray-800 hover:border-green-500/50 text-xs md:text-sm font-bold transition-all duration-200 shadow-md group"
+                        >
+                            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform text-green-400" />
+                            <span>Volver a {selectedMuscle.name}</span>
+                        </button>
+
+                        <button
+                            onClick={handleCopyExerciseLink}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-950/80 hover:bg-gray-800 text-gray-200 hover:text-green-400 border border-gray-800 hover:border-green-500/50 text-xs md:text-sm font-bold transition-all duration-200 shadow-md"
+                            title="Copiar link directo para QR"
+                        >
+                            {copiedLink ? (
+                                <>
+                                    <Check size={16} className="text-green-400" />
+                                    <span className="text-green-400">¡Link copiado!</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Link2 size={16} className="text-green-400" />
+                                    <span>Copiar link QR</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
 
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white mb-5 text-center tracking-wide px-2">
                         {selectedExercise.name}

@@ -19,6 +19,13 @@ interface SavedRoutine extends Routine {
 
 type ViewType = 'generator' | 'nutrition' | 'trainer' | 'history';
 
+const getViewFromPath = (pathname: string): ViewType => {
+    const clean = pathname.toLowerCase();
+    if (clean.startsWith('/trainer') || clean.startsWith('/ejercicio')) return 'trainer';
+    if (clean.startsWith('/nutricion') || clean.startsWith('/nutrition')) return 'nutrition';
+    return 'generator';
+};
+
 const NavLinks = ({ view, setView, setRoutine, isMobile = false }: { view: ViewType, setView: (v: ViewType) => void, setRoutine: (r: any) => void, isMobile?: boolean }) => (
     <nav className={`${isMobile ? 'flex md:hidden justify-center gap-6 mt-6 pb-2' : 'header-nav hidden md:flex items-center gap-8'}`}>
         <button
@@ -46,8 +53,24 @@ function App() {
     const [routine, setRoutine] = useState<Routine | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [view, setView] = useState<ViewType>('generator')
+    const [view, setView] = useState<ViewType>(() => getViewFromPath(window.location.pathname))
     const [history, setHistory] = useState<SavedRoutine[]>([])
+
+    const navigateToView = (nextView: ViewType) => {
+        setView(nextView)
+        const targetPath = nextView === 'trainer' ? '/trainer' : nextView === 'nutrition' ? '/nutricion' : '/'
+        if (window.location.pathname !== targetPath) {
+            window.history.pushState({}, '', targetPath)
+        }
+    }
+
+    useEffect(() => {
+        const onPopState = () => {
+            setView(getViewFromPath(window.location.pathname))
+        }
+        window.addEventListener('popstate', onPopState)
+        return () => window.removeEventListener('popstate', onPopState)
+    }, [])
     const [showToast, setShowToast] = useState(false)
     const [toastMessage, setToastMessage] = useState('')
     const [toastType, setToastType] = useState<'success' | 'delete'>('success')
@@ -436,7 +459,7 @@ function App() {
                     </div>
 
                     <div ref={navRef} className="flex justify-center">
-                        <NavLinks view={view} setView={setView} setRoutine={setRoutine} />
+                        <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} />
                     </div>
 
                     <div className="hidden md:block"></div>
@@ -454,7 +477,7 @@ function App() {
                                 <p className="hero-subtitle text-gray-500 text-xl max-w-2xl mx-auto">
                                     Algoritmos de entrenamiento basados en ciencia para maximizar tus resultados en el gimnasio.
                                 </p>
-                                <NavLinks view={view} setView={setView} setRoutine={setRoutine} isMobile={true} />
+                                <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
 
                                 {/* History button inside generator hero */}
                                 <div className="mt-6">
@@ -504,18 +527,18 @@ function App() {
                                     </button>
                                 </div>
                             </div>
-                            <NavLinks view={view} setView={setView} setRoutine={setRoutine} isMobile={true} />
+                            <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
                             <RoutineView routine={routine} />
                         </div>
                     )
                 ) : view === 'trainer' ? (
                     <div className="py-8 px-4">
-                        <NavLinks view={view} setView={setView} setRoutine={setRoutine} isMobile={true} />
+                        <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
                         <TrainerView />
                     </div>
                 ) : view === 'nutrition' ? (
                     <div className="py-2 px-0 md:py-8 md:px-4">
-                        <NavLinks view={view} setView={setView} setRoutine={setRoutine} isMobile={true} />
+                        <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
                         <NutritionView />
                     </div>
                 ) : (
@@ -533,7 +556,7 @@ function App() {
                             </div>
                             <span className="text-gray-500 text-sm font-medium">{history.length} rutinas guardadas</span>
                         </div>
-                        <NavLinks view={view} setView={setView} setRoutine={setRoutine} isMobile={true} />
+                        <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
 
                         {history.length === 0 ? (
                             <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[2rem] p-16 text-center shadow-2xl shadow-black/50">
