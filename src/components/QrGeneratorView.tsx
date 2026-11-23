@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
 import { MUSCLE_GROUPS_DATA } from '../data/trainerData';
-import { Search, Printer, Trash2, Copy, Check, QrCode, Plus, X } from 'lucide-react';
+import { Search, Printer, Trash2, Copy, Check, QrCode, Plus, X, Download } from 'lucide-react';
 
 interface SearchableExercise {
     id: string;
@@ -37,7 +38,9 @@ export const QrGeneratorView: React.FC = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [cards, setCards] = useState<GeneratedQrCard[]>([]);
     const [copiedId, setCopiedId] = useState<string | null>(null);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
     const allExercises = useMemo<SearchableExercise[]>(() => {
         const list: SearchableExercise[] = [];
@@ -122,6 +125,33 @@ export const QrGeneratorView: React.FC = () => {
             setTimeout(() => setCopiedId(null), 1800);
         } catch {
             window.prompt('Copiá este link:', card.url);
+        }
+    };
+
+    const handleDownloadImage = async (card: GeneratedQrCard) => {
+        const cardKey = `${card.muscleKey}:${card.id}`;
+        const el = cardRefs.current[cardKey];
+        if (!el) return;
+
+        setDownloadingId(cardKey);
+        try {
+            const canvas = await html2canvas(el, {
+                scale: 3,
+                backgroundColor: null,
+                useCORS: true,
+            });
+            const link = document.createElement('a');
+            link.download = `fiberfit-qr-${card.id}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    const handleDownloadAllImages = async () => {
+        for (const card of cards) {
+            await handleDownloadImage(card);
         }
     };
 
@@ -233,6 +263,15 @@ export const QrGeneratorView: React.FC = () => {
                         )}
                         <button
                             type="button"
+                            onClick={handleDownloadAllImages}
+                            disabled={cards.length === 0 || downloadingId !== null}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed text-white border border-zinc-700 font-bold text-sm transition-colors"
+                        >
+                            <Download size={16} className="text-green-400" />
+                            {cards.length > 1 ? 'Descargar PNGs' : 'Descargar PNG'}
+                        </button>
+                        <button
+                            type="button"
                             onClick={() => window.print()}
                             disabled={cards.length === 0}
                             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed text-green-950 font-extrabold text-sm transition-colors shadow-lg shadow-green-500/20"
@@ -341,24 +380,35 @@ export const QrGeneratorView: React.FC = () => {
                             <div key={cardKey} className="flex flex-col items-center gap-2.5">
                                 {/* Barra rápida por tarjeta (oculta al imprimir) */}
                                 <div className="no-print w-full flex items-center justify-between px-1">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleCopyUrl(card)}
-                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-green-400 transition-colors"
-                                        title={card.url}
-                                    >
-                                        {isCopied ? (
-                                            <>
-                                                <Check size={13} className="text-green-400" />
-                                                <span className="text-green-400">Link copiado</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Copy size={13} />
-                                                <span>Copiar link</span>
-                                            </>
-                                        )}
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownloadImage(card)}
+                                            disabled={downloadingId === cardKey}
+                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-green-400 hover:text-green-300 disabled:opacity-50 transition-colors"
+                                        >
+                                            <Download size={13} />
+                                            <span>{downloadingId === cardKey ? 'Generando...' : 'Bajar PNG'}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleCopyUrl(card)}
+                                            className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-400 hover:text-green-400 transition-colors"
+                                            title={card.url}
+                                        >
+                                            {isCopied ? (
+                                                <>
+                                                    <Check size={13} className="text-green-400" />
+                                                    <span className="text-green-400">Link copiado</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy size={13} />
+                                                    <span>Copiar link</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => handleRemoveCard(card.muscleKey, card.id)}
@@ -370,7 +420,12 @@ export const QrGeneratorView: React.FC = () => {
                                 </div>
 
                                 {/* Cartelito 10 x 15 cm */}
-                                <article className="qr-sign">
+                                <article
+                                    ref={(el) => {
+                                        cardRefs.current[cardKey] = el;
+                                    }}
+                                    className="qr-sign"
+                                >
                                     {/* Brand */}
                                     <div className="flex items-center gap-2.5 z-10">
                                         <div
