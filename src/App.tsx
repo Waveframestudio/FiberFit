@@ -4,6 +4,7 @@ import FormConfig from './components/FormConfig'
 import RoutineView from './components/RoutineView'
 import { TrainerView } from './components/TrainerView'
 import { NutritionView } from './components/NutritionView'
+import { QrGeneratorView } from './components/QrGeneratorView'
 import { apiService } from './services/apiService'
 import { Routine, GOAL_MAP, LEVEL_MAP, TYPE_MAP, MUSCLE_GROUP_MAP } from './types/routine'
 import { Dumbbell, History, Layout, Trash2, Calendar, CheckCircle2, X, Apple } from 'lucide-react'
@@ -17,10 +18,11 @@ interface SavedRoutine extends Routine {
     savedAt: string;
 }
 
-type ViewType = 'generator' | 'nutrition' | 'trainer' | 'history';
+type ViewType = 'generator' | 'nutrition' | 'trainer' | 'history' | 'qrs';
 
 const getViewFromPath = (pathname: string): ViewType => {
     const clean = pathname.toLowerCase();
+    if (clean.startsWith('/qrs')) return 'qrs';
     if (clean.startsWith('/trainer') || clean.startsWith('/ejercicio')) return 'trainer';
     if (clean.startsWith('/nutricion') || clean.startsWith('/nutrition')) return 'nutrition';
     return 'generator';
@@ -58,7 +60,7 @@ function App() {
 
     const navigateToView = (nextView: ViewType) => {
         setView(nextView)
-        const targetPath = nextView === 'trainer' ? '/trainer' : nextView === 'nutrition' ? '/nutricion' : '/'
+        const targetPath = nextView === 'trainer' ? '/trainer' : nextView === 'nutrition' ? '/nutricion' : nextView === 'qrs' ? '/Qrs' : '/'
         if (window.location.pathname !== targetPath) {
             window.history.pushState({}, '', targetPath)
         }
@@ -540,6 +542,11 @@ function App() {
                     <div className="py-2 px-0 md:py-8 md:px-4">
                         <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
                         <NutritionView />
+                    </div>
+                ) : view === 'qrs' ? (
+                    <div className="py-4 px-2 md:py-8 md:px-4">
+                        <NavLinks view={view} setView={navigateToView} setRoutine={setRoutine} isMobile={true} />
+                        <QrGeneratorView />
                     </div>
                 ) : (
                     /* History View */
